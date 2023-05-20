@@ -1,10 +1,10 @@
 # a simple suspicious email analyzer
 # input eml, outputs to a txt the following
-#sending email address, 
+# sending email address, 
 # date +time,  
-#subject line, 
-#recipient email address, 
-#reply-to-address, 
+# subject line, 
+# recipient email address, 
+# reply-to-address, 
 # the X-sender-IP + result of reverse DNS lookup (hostname)
 # If there is an attachment - name of the file, actual file type, MD5, SHA1, and SHA256 hash. 
 # If there are any hyperlinks in the eml file also outputs the url.
