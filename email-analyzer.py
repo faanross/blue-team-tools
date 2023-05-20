@@ -9,17 +9,21 @@
 # If there is an attachment - name of the file, actual file type, MD5, SHA1, and SHA256 hash. 
 # If there are any hyperlinks in the eml file also outputs the url.
 
+# Note that when the script runs you will be asked for VirusTotal API
+# If it is provided the hashes will be queried in their database
+# If no key is provided (blank), the script will still execute but ignore the VirusTotal query
 
 import email
 from email import policy
 import hashlib
 import socket
 import re
+import requests
+import argparse
 from urllib.parse import urlparse
 from pathlib import Path
 
 def process_attachment(part):
-    # Extracts information from an attachment
     data = part.get_payload(decode=True)
     name = part.get_filename()
     file_type = part.get_content_type()
@@ -31,11 +35,25 @@ def process_attachment(part):
     return (name, file_type, md5_hash, sha1_hash, sha256_hash)
 
 def extract_links(text):
-    # Extract URLs from the text
     urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', text)
     return urls
 
-def parse_email(eml_path, txt_output_path):
+def check_virustotal(hash, api_key):
+    if not api_key:
+        return None, None
+
+    url = 'https://www.virustotal.com/api/v3/files/' + hash
+    headers = {
+        "x-apikey": api_key
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        json_response = response.json()
+        return json_response['data']['attributes']['last_analysis_stats'], json_response['data']['links']['self']
+    else:
+        return None, None
+
+def parse_email(eml_path, txt_output_path, virustotal_api_key):
     with open(eml_path, 'rb') as f:
         msg = email.message_from_binary_file(f, policy=policy.default)
 
@@ -70,10 +88,22 @@ def parse_email(eml_path, txt_output_path):
         out.write(f'Hostname: {hostname}\n')
         for i, info in enumerate(attachments_info, start=1):
             out.write(f'Attachment {i} - Filename: {info[0]}, File Type: {info[1]}, MD5: {info[2]}, SHA1: {info[3]}, SHA256: {info[4]}\n')
+            if virustotal_api_key:
+                stats, link = check_virustotal(info[4], virustotal_api_key)  # Here we are using SHA256 for VirusTotal search
+                if stats and link:
+                    out.write(f'    VirusTotal Stats: {stats}\n')
+                    out.write(f'    VirusTotal Link: {link}\n')
+
         for i, url in enumerate(links, start=1):
             out.write(f'Link {i}: {url}\n')
 
-eml_file = Path('/path/to/your/emlfile.eml')
-txt_file = Path('/path/to/your/outputfile.txt')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Process an EML file.')
+    parser.add_argument('emlfile', type=str, help='Path to the .eml file')
+    parser.add_argument('txtfile', type=str, help='Path to the output .txt file')
+    parser.add_argument('--apikey', type=str, help='VirusTotal API Key', default='')
+    args = parser.parse_args()
 
-parse_email(eml_file, txt_file)
+    parse_email(args.emlfile, args.txtfile, args.apikey)
+
+      
