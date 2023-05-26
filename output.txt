@@ -1,0 +1,7 @@
+From: Mail System Internal Data <MAILER-DAEMON@monkey.org>
+Date/Time: Thu, 28 Sep 2017 09:57:25 -0400
+Subject: DON'T DELETE THIS MESSAGE -- FOLDER INTERNAL DATA
+To: None
+Reply-To: None
+X-Sender-IP: None
+Hostname: None
