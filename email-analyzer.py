@@ -64,7 +64,11 @@ def parse_email(eml_path, txt_output_path, virustotal_api_key):
     reply_to = msg.get('Reply-To')
     x_sender_ip = msg.get('X-Sender-IP')
 
-    hostname = socket.gethostbyaddr(x_sender_ip)[0] if x_sender_ip else None
+    try:
+        hostname = socket.gethostbyaddr(x_sender_ip)[0] if x_sender_ip else None
+    except socket.herror:
+        hostname = 'not available'
+
 
     attachments_info = []
     links = []
